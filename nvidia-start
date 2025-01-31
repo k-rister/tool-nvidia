@@ -1,0 +1,49 @@
+#!/bin/bash
+exec >nvidia-start-stderrout.txt
+exec 2>&1
+
+echo "args: $@"
+echo "pwd: `/bin/pwd`"
+echo "hostname: `hostname`"
+# defaults
+interval=10
+
+longopts="interval:"
+opts=$(getopt -q -o "" --longoptions "$longopts" -n "getopt.sh" -- "$@");
+if [ $? -ne 0 ]; then
+    printf -- "\tUnrecognized option specified\n\n"
+    exit 1
+fi
+eval set -- "$opts";
+while true; do
+    case "$1" in
+        --interval)
+            shift;
+            interval=$1
+            echo "interval=$interval"
+            shift;
+            ;;
+        --)
+            shift;
+            break
+            ;;
+        *)
+            echo "Invalid option: $1"
+            exit 1
+    esac
+done
+
+# Find out what GPUs we have
+gpus=`nvidia-smi --list-gpus | awk '{print $2}' | sed -e 's/:/,/' | tr -d '\n' | sed -e 's/,$//'`
+
+if [ -z "$gpus" ]; then
+    echo "Could not find any GPUs, exiting"
+    exit 1
+fi
+
+/bin/rm -f nvidia-pids.txt
+echo "Starting nvidia-smi"
+TZ=UTC S_TIME_FORMAT=ISO nvidia-smi dmon  --gpm-metrics 4,5 --gpm-options dm -o DT -d $interval -i $gpus >nvidia-smi.txt &
+nvidia_smi_pid=$!
+echo "$nvidia_smi_pid" >>nvidia-pids.txt
+echo "nvidia pid is $nvidia_pid"
