@@ -43,7 +43,7 @@ fi
 
 /bin/rm -f nvidia-pids.txt
 echo "Starting nvidia-smi"
-TZ=UTC S_TIME_FORMAT=ISO nvidia-smi dmon  --gpm-metrics 4,5 --gpm-options dm -o DT -d $interval -i $gpus
+TZ=UTC S_TIME_FORMAT=ISO nvidia-smi dmon  --gpm-metrics 4,5 --gpm-options dm -o DT -d $interval -i $gpus >nvidia-smi.txt &
 nvidia_smi_pid=$!
 echo "$nvidia_smi_pid" >>nvidia-pids.txt
 echo "nvidia pid is $nvidia_pid"
