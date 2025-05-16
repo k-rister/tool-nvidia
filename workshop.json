@@ -7,16 +7,16 @@
     "userenvs": [
         {
             "name": "default",
-            "requirements": [ "nvidia" ]
+            "requirements": [ "nvidia-ml-py" ]
         }
     ],
     "requirements": [
         {
-            "name": "nvidia",
-            "type": "distro",
-            "distro_info": {
+            "name": "nvidia-ml-py",
+            "type": "python3",
+            "python3_info": {
                 "packages": [
-		    "nvidia-driver-cuda"
+		    "nvidia-ml-py"
                 ]
             }
         }
