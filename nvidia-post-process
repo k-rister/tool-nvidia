@@ -31,39 +31,38 @@ from toolbox.metrics import log_sample
 from toolbox.metrics import finish_samples
 
 def main():
-    print('nvidia-post-process-smi')
-    # Made for the file conntrack-stats-show.txt.xz
-    # #Date        Time         gpu    pwr  gtemp  mtemp     sm    mem    enc    dec    jpg    ofa   mclk   pclk     mig_id      gi_id      ci_id    intutil     mmaact
-    # #YYYYMMDD    HH:MM:SS     Idx      W      C      C      %      %      %      %      %      %    MHz    MHz        Idx        Idx        Idx      GPM:%      GPM:%
-    # 20241120    19:14:24       0     34     34     35      0      0      0      0      0      0   1215    210          -          -          -          -          -
-    # 20241120    19:14:24       1     38     36     37      0      0      0      0      0      0   1215    210          -          -          -          0          0
-    # 20241120    19:14:27       0     34     34     35      0      0      0      0      0      0   1215    210          -          -          -          -          -
-    f = 'nvidia-smi.txt.xz'
+    print('nvidia-post-process')
+
+    # timestamp, device_id, device_name, gpu_util(%), mem_util(%), temp(C), used_mem(MiB), total_mem(MiB), free_mem(MiB), power(W), fan(%)
+    # 2025-05-16 14:51:59, 0, NVIDIA A100-SXM4-80GB,   0,   0,  31,    882.4,  81920.0,  81037.6,  65.3,   0
+    # 2025-05-16 14:51:59, 1, NVIDIA A100-SXM4-80GB,   0,   0,  29,    882.4,  81920.0,  81037.6,  63.7,   0
+
+    f = 'nvidia-output.txt.xz'
     with lzma.open(f, 'rt') as file:
         desc_tput = {'source': 'nvidia-smi', 'type': 'util', 'class': 'throughput'}
         desc_count = {'source': 'nvidia-smi', 'type': 'mclk', 'class': 'count'}
         file_id = '0'
         for line in file:
             print(line)
-            if reggy := re.search(r'^\s*(\d{,8}\s+\d{,2}:\d{,2}:\d{,2})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).+', line):
+            if reggy := re.search(r'^(\d{,4}-\d{,2}-\d{,2}\s+\d{,2}:\d{,2}:\d{,2}),\s+(\d+),\s+([^,]+),\s+(\d+),\s+(\d+),\s+(\d+),\s+((\d+(\.\d*)?)|(\.\d+)),\s+((\d+(\.\d*)?)|(\.\d+)),\s+((\d+(\.\d*)?)|(\.\d+)),\s+((\d+(\.\d*)?)|(\.\d+)),\s+(\d+)$', line):
                 print("matched")
                 end_dt = reggy.group(1)
-                names = {'id': reggy.group(2)}
+                names = {'id': reggy.group(2), 'desc' : reggy.group(3)}
                 values = {
-                    'pwr': reggy.group(3),
-                    'gtemp': reggy.group(4),
-                    'mtemp': reggy.group(5),
-                    'util': reggy.group(6),
-                    'mem': reggy.group(7) }
-                dt = datetime.strptime(end_dt, '%Y%m%d %X')
+                    'util': reggy.group(4),
+                    'temp': reggy.group(6),
+                    'mem': reggy.group(7),
+                    'pwr': reggy.group(19)
+                    }
+                dt = datetime.strptime(end_dt, '%Y-%m-%d %X')
                 end_ts = int(math.floor(dt.timestamp() * 1000))
-                for this_type in ('pwr', 'util', 'mem', 'gtemp', 'mtemp'):
+                for this_type in ('pwr', 'util', 'mem', 'temp'):
                     sample = {'end': end_ts, 'value': values[this_type]}
-                    if this_type in ('gtemp', 'mtemp'):
+                    if this_type in ('temp'):
                         this_class = 'count'
                     else:
                         this_class = 'throughput'
-                    this_desc = {'source': 'nvidia-smi', 'type': this_type, 'class': this_class}
+                    this_desc = {'source': 'nvidia', 'type': this_type, 'class': this_class}
                     log_sample(file_id, this_desc, names, sample)
             else:
                 print("NO MATCH")

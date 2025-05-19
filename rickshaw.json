@@ -11,6 +11,10 @@
     "collector": {
         "files-from-controller": [
             {
+                "src": "%tool-dir%/nvidia-collect",
+                "dest": "/usr/bin/"
+            },
+            {
                 "src": "%tool-dir%/nvidia-start",
                 "dest": "/usr/bin/"
             },
